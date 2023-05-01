@@ -16,9 +16,15 @@ typedef struct {
 } signal_vcd_t;
 
 typedef struct {
+    char *unit;
+    size_t scale;
+} timescale_t;
+
+typedef struct {
     signal_vcd_t *signal_dumps;
     char *date;
     char *version;
+    timescale_t timescale;
 } vcd_t;
 
 #endif //LIBVCD_LIBVCD_H
