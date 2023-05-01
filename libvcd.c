@@ -58,3 +58,15 @@ void init_vcd() {
     vcd->timescale.unit = (char *) malloc(LIBVCD_TIMESCALE_UNIT_SIZE);
     vcd->signal_dumps = (signal_t *) malloc(LIBVCD_MAX_SIGNAL_COUNT * sizeof(signal_t));
 }
+
+void parse_var(void) {
+
+}
+
+void parse_timestamp(void) {
+
+}
+
+void parse_assignment(void) {
+
+}
