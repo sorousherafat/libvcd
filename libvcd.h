@@ -3,7 +3,14 @@
 
 #include <stdint.h>
 
-typedef uint64_t timestamp_t;
+#define LIBVCD_VERSION_SIZE 32
+#define LIBVCD_DATE_SIZE 64
+#define LIBVCD_TIMESCALE_UNIT_SIZE 4
+#define LIBVCD_MAX_SIGNAL_COUNT 64
+#define LIBVCD_MAX_VALUE_CHANGE_COUNT 2048
+#define LIBVCD_SIGNAL_NAME_SIZE 64
+
+typedef uint32_t timestamp_t;
 
 typedef struct {
     timestamp_t timestamp;
@@ -12,8 +19,9 @@ typedef struct {
 
 typedef struct {
     char *name;
+    size_t size;
     value_change_t *value_changes;
-} signal_vcd_t;
+} signal_t;
 
 typedef struct {
     char *unit;
@@ -21,7 +29,7 @@ typedef struct {
 } timescale_t;
 
 typedef struct {
-    signal_vcd_t *signal_dumps;
+    signal_t *signal_dumps;
     char *date;
     char *version;
     timescale_t timescale;
