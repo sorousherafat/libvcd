@@ -106,7 +106,7 @@ void parse_instruction(FILE *file, vcd_t *vcd) {
 }
 
 void parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp) {
-
+    fscanf(file, "%u", timestamp);
 }
 
 void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
