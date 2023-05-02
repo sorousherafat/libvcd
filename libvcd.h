@@ -36,4 +36,6 @@ typedef struct {
 
 vcd_t *open_vcd(char *path);
 
+char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp);
+
 #endif //LIBVCD_LIBVCD_H
