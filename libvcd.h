@@ -2,13 +2,10 @@
 #define LIBVCD_LIBVCD_H
 
 #include <stdint.h>
+#include <stdio.h>
 
-#define LIBVCD_VERSION_SIZE 32
-#define LIBVCD_DATE_SIZE 64
-#define LIBVCD_TIMESCALE_UNIT_SIZE 4
 #define LIBVCD_MAX_SIGNAL_COUNT 64
 #define LIBVCD_MAX_VALUE_CHANGE_COUNT 2048
-#define LIBVCD_TOKEN_SIZE 64
 
 typedef uint32_t timestamp_t;
 
@@ -34,5 +31,7 @@ typedef struct {
     char *version;
     timescale_t timescale;
 } vcd_t;
+
+vcd_t *open_vcd(char *path);
 
 #endif //LIBVCD_LIBVCD_H
