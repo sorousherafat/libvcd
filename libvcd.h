@@ -18,6 +18,7 @@ typedef struct {
     char *name;
     size_t size;
     value_change_t *value_changes;
+    size_t changes_count;
 } signal_t;
 
 typedef struct {
@@ -27,6 +28,7 @@ typedef struct {
 
 typedef struct {
     signal_t *signal_dumps;
+    size_t signals_count;
     char *date;
     char *version;
     timescale_t timescale;
