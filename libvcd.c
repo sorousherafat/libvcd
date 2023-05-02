@@ -61,6 +61,7 @@ vcd_t *open_vcd(char *path) {
 void init_vcd(vcd_t **vcd) {
     *vcd = (vcd_t *) malloc(sizeof(vcd_t));
     (*vcd)->signal_dumps = (signal_t *) malloc(LIBVCD_MAX_SIGNAL_COUNT * sizeof(signal_t));
+    (*vcd)->signals_count = 0;
 }
 
 void parse_instruction(FILE *file, vcd_t *vcd) {
@@ -78,11 +79,14 @@ void parse_instruction(FILE *file, vcd_t *vcd) {
     }
 
     if (strcmp(instruction, "var") == 0) {
-        signal_t signal = {};
+        signal_t signal;
+        signal.changes_count = 0;
         signal.value_changes = (value_change_t *) malloc(LIBVCD_MAX_VALUE_CHANGE_COUNT * sizeof(value_change_t));
         char *signal_id;
         fscanf(file, " %*s %zu %m[^ ] %m[^ $]%*[^$]", &signal.size, &signal_id, &signal.name);
         size_t index = get_signal_index(signal_id);
+        if (vcd->signal_dumps[index].size == 0)
+            vcd->signals_count += 1;
         vcd->signal_dumps[index] = signal;
         return;
     }
@@ -110,7 +114,23 @@ void parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp) {
 }
 
 void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
+    char *buffer;
+    char *value;
+    char *signal_id;
+    fscanf(file, "%m[^\n]", &buffer);
 
+    if (strchr("01xXzZ", buffer[0])) {
+        value = (char *) malloc(2 * sizeof(char));
+        sscanf(buffer, "%1s%m[^\n]", value, &signal_id);
+    } else {
+        sscanf(buffer, "%m[^ ] %m[^\n]", &value, &signal_id);
+    }
+
+    size_t index = get_signal_index(signal_id);
+    size_t changes_count = vcd->signal_dumps[index].changes_count;
+    vcd->signal_dumps[index].value_changes[changes_count].timestamp = timestamp;
+    vcd->signal_dumps[index].value_changes[changes_count].value = value;
+    vcd->signal_dumps[index].changes_count += 1;
 }
 
 size_t get_signal_index(const char *string) {
