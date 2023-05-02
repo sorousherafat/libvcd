@@ -3,4 +3,4 @@ project(libvcd C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_library(libvcd libvcd.c)
+add_library(libvcd libvcd.c test/test.c)
