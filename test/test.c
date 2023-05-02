@@ -16,11 +16,17 @@ void print_vcd(vcd_t *vcd) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: test <vcd-file>\n");
+    if (argc % 2 == 1) {
+        fprintf(stderr, "Usage: test <vcd-file> [signal-name timestamp] ...\n");
         exit(EXIT_FAILURE);
     }
 
     vcd_t *vcd = open_vcd(argv[1]);
     print_vcd(vcd);
+    printf("\n");
+
+    for (int i = 2; i < argc; i += 2) {
+        timestamp_t timestamp = strtol(argv[i + 1], NULL, 0);
+        printf("%s at %u equals %s\n", argv[i], timestamp, get_value_from_vcd(vcd, argv[i], timestamp));
+    }
 }
