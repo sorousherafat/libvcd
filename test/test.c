@@ -3,13 +3,21 @@
 #include <stdlib.h>
 
 void print_vcd(vcd_t *vcd) {
-    printf("{\n\tdate=\"%s\",\n\tversion=\"%s\",\n\ttimescale=\"{\n\t\tunit=\"%s\",\n\t\tscale=\"%zu\"\n\t}\"\n}", vcd->date, vcd->version,
+    printf("{\n\tdate=\"%s\",\n\tversion=\"%s\",\n\ttimescale= {\n\t\tunit=\"%s\",\n\t\tscale=\"%zu\"\n\t},\n\tsignal= {\n", vcd->date, vcd->version,
            vcd->timescale.unit, vcd->timescale.scale);
+    for (int i = 0; i < vcd->signals_count; ++i) {
+        printf("\t\t%s= {\n\t\t\tsize=%zu,\n\t\t\tchanges= {\n", vcd->signal_dumps[i].name, vcd->signal_dumps[i].size);
+        for (int j = 0; j < vcd->signal_dumps[i].changes_count; ++j) {
+            printf("\t\t\t\t{\n\t\t\t\t\ttimestamp=%u,\n\t\t\t\t\tvalue=%s\n\t\t\t\t},\n", vcd->signal_dumps[i].value_changes[j].timestamp, vcd->signal_dumps[i].value_changes[j].value);
+        }
+        printf("\t\t\t},\n\t\t},\n");
+    }
+    printf("\t}\n}\n");
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: test <vcd-file>");
+        fprintf(stderr, "Usage: test <vcd-file>\n");
         exit(EXIT_FAILURE);
     }
 
