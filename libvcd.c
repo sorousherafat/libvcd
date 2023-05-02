@@ -18,6 +18,10 @@ static void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
 
 static size_t get_signal_index(const char *string);
 
+static signal_t *get_signal_by_name(vcd_t *vcd, char *name);
+
+static char *get_signal_value(signal_t *signal, timestamp_t timestamp);
+
 vcd_t *open_vcd(char *path) {
     FILE *file = fopen(path, "r");
     if (file == NULL)
@@ -56,6 +60,16 @@ vcd_t *open_vcd(char *path) {
     }
 
     return vcd;
+}
+
+char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
+    signal_t *signal = get_signal_by_name(vcd, signal_name);
+    if (signal == NULL) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    return get_signal_value(signal, timestamp);
 }
 
 void init_vcd(vcd_t **vcd) {
@@ -141,4 +155,25 @@ size_t get_signal_index(const char *string) {
     }
 
     return id;
+}
+
+signal_t *get_signal_by_name(vcd_t *vcd, char *name) {
+    for (int i = 0; i < vcd->signals_count; ++i) {
+        if (strcmp(vcd->signal_dumps[i].name, name) == 0)
+            return &vcd->signal_dumps[i];
+    }
+
+    return NULL;
+}
+
+char *get_signal_value(signal_t *signal, timestamp_t timestamp) {
+    char *previous_value;
+    for (int i = 0; i < signal->changes_count; ++i) {
+        value_change_t *value_change = &signal->value_changes[i];
+        if (timestamp < value_change->timestamp)
+            return previous_value;
+        previous_value = value_change->value;
+    }
+
+    return NULL;
 }
