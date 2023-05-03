@@ -171,9 +171,8 @@ char *get_signal_value(signal_t *signal, timestamp_t timestamp) {
     for (int i = 0; i < signal->changes_count; ++i) {
         value_change_t *value_change = &signal->value_changes[i];
         if (timestamp < value_change->timestamp)
-            return previous_value;
+            break;
         previous_value = value_change->value;
     }
-
-    return NULL;
+    return previous_value;
 }
