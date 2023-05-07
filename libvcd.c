@@ -74,7 +74,7 @@ char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
 
 void init_vcd(vcd_t **vcd) {
     *vcd = (vcd_t *) malloc(sizeof(vcd_t));
-    (*vcd)->signal_dumps = (signal_t *) malloc(LIBVCD_MAX_SIGNAL_COUNT * sizeof(signal_t));
+    (*vcd)->signal_dumps = (signal_t *) calloc(1, LIBVCD_MAX_SIGNAL_COUNT * sizeof(signal_t));
     (*vcd)->signals_count = 0;
 }
 
