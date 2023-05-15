@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include "libvcd.h"
 
@@ -12,7 +11,7 @@ static void init_vcd(vcd_t **vcd);
 
 static void parse_instruction(FILE *file, vcd_t *vcd);
 
-static void parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp);
+static void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp);
 
 static void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
 
@@ -73,14 +72,12 @@ char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
 }
 
 void init_vcd(vcd_t **vcd) {
-    *vcd = (vcd_t *) malloc(sizeof(vcd_t));
-    (*vcd)->signal_dumps = (signal_t *) calloc(1, LIBVCD_MAX_SIGNAL_COUNT * sizeof(signal_t));
-    (*vcd)->signals_count = 0;
+    *vcd = (vcd_t *) calloc(1, sizeof(vcd_t));
 }
 
 void parse_instruction(FILE *file, vcd_t *vcd) {
-    char *instruction;
-    if (fscanf(file, "%ms", &instruction) != 1)
+    char instruction[512];
+    if (fscanf(file, "%s", instruction) != 1)
         return;
 
     if (strcmp(instruction, "end") == 0 || strcmp(instruction, "dumpvars") == 0)
@@ -93,63 +90,64 @@ void parse_instruction(FILE *file, vcd_t *vcd) {
     }
 
     if (strcmp(instruction, "var") == 0) {
-        signal_t signal;
-        signal.changes_count = 0;
-        signal.value_changes = (value_change_t *) malloc(LIBVCD_MAX_VALUE_CHANGE_COUNT * sizeof(value_change_t));
-        char *signal_id;
-        fscanf(file, " %*s %zu %m[^ ] %m[^ $]%*[^$]", &signal.size, &signal_id, &signal.name);
+        signal_t *signal = &vcd->signals[vcd->signals_count];
+        vcd->signals_count += 1;
+
+        char signal_id[8];
+        fscanf(file, " %*s %zu %[^ ] %[^ $]%*[^$]", &signal->size, signal_id, signal->name);
         size_t index = get_signal_index(signal_id);
-        if (vcd->signal_dumps[index].size == 0)
-            vcd->signals_count += 1;
-        vcd->signal_dumps[index] = signal;
+
+        if (vcd->signals[index].size != 0) {
+            return;
+        }
+
         return;
     }
 
     if (strcmp(instruction, "date") == 0) {
-        fscanf(file, "\n%m[^$\n]", &vcd->date);
+        fscanf(file, "\n%[^$\n]", vcd->date);
         return;
     }
 
     if (strcmp(instruction, "version") == 0) {
-        fscanf(file, "\n%m[^$\n]", &vcd->version);
+        fscanf(file, "\n%[^$\n]", vcd->version);
         return;
     }
 
     if (strcmp(instruction, "timescale") == 0) {
-        fscanf(file, "\n\t%zu%m[^$\n]", &vcd->timescale.scale, &vcd->timescale.unit);
+        fscanf(file, "\n\t%zu%[^$\n]", &vcd->timescale.scale, vcd->timescale.unit);
         return;
     }
 
     fprintf(stderr, "Unknown token: '%s'", instruction);
 }
 
-void parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp) {
+void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp) {
     fscanf(file, "%u", timestamp);
 }
 
 void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
-    char *buffer;
-    char *value;
-    char *signal_id;
-    fscanf(file, "%m[^\n]", &buffer);
+    char buffer[128];
+    char value[64];
+    char signal_id[8];
+    fscanf(file, "%[^\n]", buffer);
 
     if (strchr("01xXzZ", buffer[0])) {
-        value = (char *) malloc(2 * sizeof(char));
-        sscanf(buffer, "%1s%m[^\n]", value, &signal_id);
+        sscanf(buffer, "%1s%[^\n]", value, signal_id);
     } else {
-        sscanf(buffer, "%m[^ ] %m[^\n]", &value, &signal_id);
+        sscanf(buffer, "%[^ ] %[^\n]", value, signal_id);
     }
 
     size_t index = get_signal_index(signal_id);
-    size_t changes_count = vcd->signal_dumps[index].changes_count;
-    vcd->signal_dumps[index].value_changes[changes_count].timestamp = timestamp;
-    vcd->signal_dumps[index].value_changes[changes_count].value = value;
-    vcd->signal_dumps[index].changes_count += 1;
+    size_t changes_count = vcd->signals[index].changes_count;
+    vcd->signals[index].value_changes[changes_count].timestamp = timestamp;
+    strncpy(vcd->signals[index].value_changes[changes_count].value, value, LIBVCD_SIGNAL_SIZE);
+    vcd->signals[index].changes_count += 1;
 }
 
 size_t get_signal_index(const char *string) {
     size_t id = *string - '!';
-    if (id > LIBVCD_MAX_SIGNAL_COUNT) {
+    if (id >= LIBVCD_SCOPE_SIGNAL_COUNT) {
         fprintf(stderr, "Signal count exceeded the maximum allowed number");
         exit(EXIT_FAILURE);
     }
@@ -159,8 +157,8 @@ size_t get_signal_index(const char *string) {
 
 signal_t *get_signal_by_name(vcd_t *vcd, char *name) {
     for (int i = 0; i < vcd->signals_count; ++i) {
-        if (strcmp(vcd->signal_dumps[i].name, name) == 0)
-            return &vcd->signal_dumps[i];
+        if (strcmp(vcd->signals[i].name, name) == 0)
+            return &vcd->signals[i];
     }
 
     return NULL;
