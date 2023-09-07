@@ -1,0 +1,14 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-c",
+      "-o",
+      "libvcd.o",
+      "libvcd.c"
+    ],
+    "directory": "/home/sorousherafat/Documents/SUT/TA/Digital System Design/Projects/libvcd",
+    "file": "/home/sorousherafat/Documents/SUT/TA/Digital System Design/Projects/libvcd/libvcd.c",
+    "output": "/home/sorousherafat/Documents/SUT/TA/Digital System Design/Projects/libvcd/libvcd.o"
+  }
+]
