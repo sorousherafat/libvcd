@@ -1,25 +1,25 @@
+#include "libvcd.h"
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
-#include <string.h>
-#include <ctype.h>
 #include <stdlib.h>
-#include "libvcd.h"
+#include <string.h>
 
 #define isexpression(c) (strchr("-0123456789zZxXbU", (c)))
 
-static void init_vcd(vcd_t **vcd);
+void init_vcd(vcd_t **vcd);
 
-static void parse_instruction(FILE *file, vcd_t *vcd);
+void parse_instruction(FILE *file, vcd_t *vcd);
 
-static void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp);
+void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp);
 
-static void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
+void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
 
-static size_t get_signal_index(const char *string);
+size_t get_signal_index(const char *string);
 
-static signal_t *get_signal_by_name(vcd_t *vcd, char *name);
+signal_t *get_signal_by_name(vcd_t *vcd, char *name);
 
-static char *get_signal_value(signal_t *signal, timestamp_t timestamp);
+char *get_signal_value(signal_t *signal, timestamp_t timestamp);
 
 vcd_t *open_vcd(char *path) {
     FILE *file = fopen(path, "r");
@@ -52,7 +52,7 @@ vcd_t *open_vcd(char *path) {
             continue;
 
 #ifdef LIBVCD_VERBOSE
-            fprintf(stderr, "invalid character at the beginning of the line: '%c'\n", c);
+        fprintf(stderr, "invalid character at the beginning of the line: '%c'\n", c);
 #endif
         errno = EINVAL;
         return NULL;
@@ -71,9 +71,7 @@ char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
     return get_signal_value(signal, timestamp);
 }
 
-void init_vcd(vcd_t **vcd) {
-    *vcd = (vcd_t *) calloc(1, sizeof(vcd_t));
-}
+void init_vcd(vcd_t **vcd) { *vcd = (vcd_t *)calloc(1, sizeof(vcd_t)); }
 
 void parse_instruction(FILE *file, vcd_t *vcd) {
     char instruction[512];
