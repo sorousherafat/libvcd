@@ -1,14 +1,29 @@
-SRC=libvcd.c
-OBJECTS=libvcd.o
 CC=gcc
+CFLAGS=-Wall -g -std=c11 -O3 -Isrc/
+LDFLAGS=
 
-build: $(SRC)
-	$(CC) -g -Wall -o $(OBJECTS) -c $(SRC)
+SRC_DIR=src
+TEST_DIR=test
+BUILD_DIR=build
 
-test: build
-	$(CC) -g -Wall -o test/test test/test.c $(OBJECTS)
+LIB_SOURCES=$(wildcard $(SRC_DIR)/*.c)
+LIB_OBJECTS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(LIB_SOURCES))
+TEST_SOURCES=$(wildcard $(TEST_DIR)/*.c)
+TEST_EXECUTABLE=$(BUILD_DIR)/test
+
+all: $(TEST_EXECUTABLE)
+
+$(TEST_EXECUTABLE): $(LIB_OBJECTS) $(TEST_SOURCES) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(TEST_SOURCES) $(LIB_OBJECTS) -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR):
+	mkdir -p $@
 
 clean:
-	rm $(OBJECTS) test/test
+	rm -rf $(BUILD_DIR)/*
 
-.PHONY: build
+.PHONY: all clean
+

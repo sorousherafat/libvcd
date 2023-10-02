@@ -9,6 +9,8 @@
 
 #define isexpression(c) (strchr("-0123456789zZxXbU", (c)))
 
+#define BUFFER_LENGTH 512
+
 vcd_t *new_vcd();
 
 bool parse_instruction(FILE *file, vcd_t *vcd);
@@ -75,7 +77,7 @@ char *libvcd_get_signal_value(vcd_t *vcd, char *signal_name, timestamp_t timesta
 vcd_t *new_vcd() { return (vcd_t *)calloc(1, sizeof(vcd_t)); }
 
 bool parse_instruction(FILE *file, vcd_t *vcd) {
-    char instruction[512];
+    char instruction[BUFFER_LENGTH];
     if (fscanf(file, "%s", instruction) != 1)
         return false;
 
@@ -92,7 +94,7 @@ bool parse_instruction(FILE *file, vcd_t *vcd) {
         signal_t *signal = &vcd->signals[vcd->signals_count];
         vcd->signals_count += 1;
 
-        char signal_id[8];
+        char signal_id[LIBVCD_NAME_SIZE];
         fscanf(file, " %*s %zu %[^ ] %[^ $]%*[^$]", &signal->size, signal_id, signal->name);
         int index = get_signal_index(signal_id);
 
@@ -127,9 +129,9 @@ bool parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp) {
 }
 
 bool parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
-    char buffer[128];
-    char value[64];
-    char signal_id[8];
+    char buffer[BUFFER_LENGTH];
+    char value[LIBVCD_SIGNAL_SIZE];
+    char signal_id[LIBVCD_NAME_SIZE];
     fscanf(file, "%[^\n]", buffer);
 
     bool is_vector = strchr("01xXzZ", buffer[0]) == NULL;

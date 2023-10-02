@@ -1,5 +1,5 @@
-# Test binary
-test/test
+# Build output
+build/
 
 # Compile commands for clangd
 compile_commands.json
