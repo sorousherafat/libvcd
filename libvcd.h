@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define LIBVCD_SCOPE_COUNT 8
-#define LIBVCD_SCOPE_SIGNAL_COUNT 32
+#define LIBVCD_SIGNAL_COUNT 32
 #define LIBVCD_VALUE_CHANGE_COUNT 512
 #define LIBVCD_SIGNAL_SIZE 128
 #define LIBVCD_NAME_SIZE 32
@@ -34,14 +33,14 @@ typedef struct {
 
 typedef struct {
     size_t signals_count;
-    signal_t signals[LIBVCD_SCOPE_SIGNAL_COUNT];
+    signal_t signals[LIBVCD_SIGNAL_COUNT];
     char date[LIBVCD_DATE_SIZE];
     char version[LIBVCD_VERSION_SIZE];
     timescale_t timescale;
 } vcd_t;
 
-vcd_t *open_vcd(char *path);
+vcd_t *libvcd_read_vcd_from_path(char *path);
 
-char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp);
+char *libvcd_get_signal_value(vcd_t *vcd, char *signal_name, timestamp_t timestamp);
 
 #endif //LIBVCD_LIBVCD_H

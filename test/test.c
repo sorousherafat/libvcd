@@ -1,6 +1,7 @@
-#include "../libvcd.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "../libvcd.h"
 
 void print_vcd(vcd_t *vcd) {
     printf("{\n\tdate=\"%s\",\n\tversion=\"%s\",\n\ttimescale= {\n\t\tunit=\"%s\",\n\t\tscale=\"%zu\"\n\t},\n\tsignal= {\n",
@@ -23,13 +24,13 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    vcd_t *vcd = open_vcd(argv[1]);
+    vcd_t *vcd = libvcd_read_vcd_from_path(argv[1]);
     print_vcd(vcd);
     printf("\n");
 
     for (int i = 2; i < argc; i += 2) {
         timestamp_t timestamp = strtol(argv[i + 1], NULL, 0);
-        printf("%s at %u equals %s\n", argv[i], timestamp, get_value_from_vcd(vcd, argv[i], timestamp));
+        printf("%s at %u equals %s\n", argv[i], timestamp, libvcd_get_signal_value(vcd, argv[i], timestamp));
     }
 
     free(vcd);

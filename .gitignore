@@ -1,3 +1,6 @@
+# Test binary
+test/test
+
 # Compile commands for clangd
 compile_commands.json
 

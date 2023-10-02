@@ -1,90 +1,91 @@
-#include "libvcd.h"
 #include <ctype.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "libvcd.h"
+
 #define isexpression(c) (strchr("-0123456789zZxXbU", (c)))
 
-void init_vcd(vcd_t **vcd);
+vcd_t *new_vcd();
 
-void parse_instruction(FILE *file, vcd_t *vcd);
+bool parse_instruction(FILE *file, vcd_t *vcd);
 
-void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp);
+bool parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp);
 
-void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
+bool parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp);
 
-size_t get_signal_index(const char *string);
+int get_signal_index(const char *string);
 
 signal_t *get_signal_by_name(vcd_t *vcd, char *name);
 
 char *get_signal_value(signal_t *signal, timestamp_t timestamp);
 
-vcd_t *open_vcd(char *path) {
+vcd_t *libvcd_read_vcd_from_path(char *path) {
     FILE *file = fopen(path, "r");
     if (file == NULL)
         return NULL;
 
-    vcd_t *vcd;
-    init_vcd(&vcd);
+    vcd_t *vcd = new_vcd();
     timestamp_t current_timestamp = 0;
 
-    int c;
-    while ((c = fgetc(file)) != EOF) {
-        if (c == '$') {
-            parse_instruction(file, vcd);
-            continue;
+    int character = 0;
+    while ((character = fgetc(file)) != EOF) {
+        if (character == '$') {
+            bool successful = parse_instruction(file, vcd);
+            if (successful)
+                continue;
         }
 
-        if (c == '#') {
-            parse_timestamp(file, vcd, &current_timestamp);
-            continue;
+        else if (character == '#') {
+            bool successful = parse_timestamp(file, vcd, &current_timestamp);
+            if (successful)
+                continue;
         }
 
-        if (isexpression(c)) {
-            ungetc(c, file);
-            parse_assignment(file, vcd, current_timestamp);
-            continue;
+        else if (isexpression(character)) {
+            ungetc(character, file);
+            bool successful = parse_assignment(file, vcd, current_timestamp);
+            if (successful)
+                continue;
         }
 
-        if (isspace(c))
+        else if (isspace(character))
             continue;
 
-#ifdef LIBVCD_VERBOSE
-        fprintf(stderr, "invalid character at the beginning of the line: '%c'\n", c);
-#endif
-        errno = EINVAL;
+        fclose(file);
+        free(vcd);
         return NULL;
     }
 
+    fclose(file);
     return vcd;
 }
 
-char *get_value_from_vcd(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
+char *libvcd_get_signal_value(vcd_t *vcd, char *signal_name, timestamp_t timestamp) {
     signal_t *signal = get_signal_by_name(vcd, signal_name);
-    if (signal == NULL) {
-        errno = EINVAL;
+    if (signal == NULL)
         return NULL;
-    }
 
     return get_signal_value(signal, timestamp);
 }
 
-void init_vcd(vcd_t **vcd) { *vcd = (vcd_t *)calloc(1, sizeof(vcd_t)); }
+vcd_t *new_vcd() { return (vcd_t *)calloc(1, sizeof(vcd_t)); }
 
-void parse_instruction(FILE *file, vcd_t *vcd) {
+bool parse_instruction(FILE *file, vcd_t *vcd) {
     char instruction[512];
     if (fscanf(file, "%s", instruction) != 1)
-        return;
+        return false;
 
     if (strcmp(instruction, "end") == 0 || strcmp(instruction, "dumpvars") == 0)
-        return;
+        return true;
 
     if (strcmp(instruction, "scope") == 0 || strcmp(instruction, "upscope") == 0 ||
         strcmp(instruction, "enddefinitions") == 0) {
         fscanf(file, "\n%*[^$]");
-        return;
+        return true;
     }
 
     if (strcmp(instruction, "var") == 0) {
@@ -93,62 +94,62 @@ void parse_instruction(FILE *file, vcd_t *vcd) {
 
         char signal_id[8];
         fscanf(file, " %*s %zu %[^ ] %[^ $]%*[^$]", &signal->size, signal_id, signal->name);
-        size_t index = get_signal_index(signal_id);
+        int index = get_signal_index(signal_id);
 
-        if (vcd->signals[index].size != 0) {
-            return;
-        }
+        /* This signal is an alias. */
+        if (vcd->signals[index].size != 0)
+            return true;
 
-        return;
+        return true;
     }
 
     if (strcmp(instruction, "date") == 0) {
         fscanf(file, "\n%[^$\n]", vcd->date);
-        return;
+        return true;
     }
 
     if (strcmp(instruction, "version") == 0) {
         fscanf(file, "\n%[^$\n]", vcd->version);
-        return;
+        return true;
     }
 
     if (strcmp(instruction, "timescale") == 0) {
         fscanf(file, "\n\t%zu%[^$\n]", &vcd->timescale.scale, vcd->timescale.unit);
-        return;
+        return true;
     }
 
-    fprintf(stderr, "Unknown token: '%s'", instruction);
+    return false;
 }
 
-void parse_timestamp(FILE *file, __attribute__((unused)) vcd_t *vcd, timestamp_t *timestamp) {
-    fscanf(file, "%u", timestamp);
+bool parse_timestamp(FILE *file, vcd_t *vcd, timestamp_t *timestamp) {
+    bool successful = fscanf(file, "%u", timestamp) == 1;
+    return successful;
 }
 
-void parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
+bool parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
     char buffer[128];
     char value[64];
     char signal_id[8];
     fscanf(file, "%[^\n]", buffer);
 
-    if (strchr("01xXzZ", buffer[0])) {
-        sscanf(buffer, "%1s%[^\n]", value, signal_id);
-    } else {
-        sscanf(buffer, "%[^ ] %[^\n]", value, signal_id);
-    }
+    bool is_vector = strchr("01xXzZ", buffer[0]) == NULL;
+    char *assignment_format_string = is_vector ? "%[^ ] %[^\n]" : "%1s%[^\n]";
+    if (sscanf(buffer, assignment_format_string, value, signal_id) != 2)
+        return false;
 
     size_t index = get_signal_index(signal_id);
     size_t changes_count = vcd->signals[index].changes_count;
     vcd->signals[index].value_changes[changes_count].timestamp = timestamp;
     strncpy(vcd->signals[index].value_changes[changes_count].value, value, LIBVCD_SIGNAL_SIZE);
     vcd->signals[index].changes_count += 1;
+
+    return true;
 }
 
-size_t get_signal_index(const char *string) {
-    size_t id = *string - '!';
-    if (id >= LIBVCD_SCOPE_SIGNAL_COUNT) {
-        fprintf(stderr, "Signal count exceeded the maximum allowed number");
-        exit(EXIT_FAILURE);
-    }
+int get_signal_index(const char *string) {
+    int id = *string - '!';
+    if (id >= LIBVCD_SIGNAL_COUNT)
+        return -1;
 
     return id;
 }
@@ -163,7 +164,7 @@ signal_t *get_signal_by_name(vcd_t *vcd, char *name) {
 }
 
 char *get_signal_value(signal_t *signal, timestamp_t timestamp) {
-    char *previous_value;
+    char *previous_value = NULL;
     for (int i = 0; i < signal->changes_count; ++i) {
         value_change_t *value_change = &signal->value_changes[i];
         if (timestamp < value_change->timestamp)
