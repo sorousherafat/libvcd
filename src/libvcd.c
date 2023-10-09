@@ -81,11 +81,12 @@ bool parse_instruction(FILE *file, vcd_t *vcd) {
     if (fscanf(file, "%s", instruction) != 1)
         return false;
 
-    if (strcmp(instruction, "end") == 0 || strcmp(instruction, "dumpvars") == 0)
+    if (strcmp(instruction, "end") == 0 || strcmp(instruction, "dumpvars") == 0 ||
+	strcmp(instruction, "dumpall") == 0)
         return true;
 
     if (strcmp(instruction, "scope") == 0 || strcmp(instruction, "upscope") == 0 ||
-        strcmp(instruction, "enddefinitions") == 0) {
+        strcmp(instruction, "enddefinitions") == 0 || strcmp(instruction, "comment") == 0) {
         fscanf(file, "\n%*[^$]");
         return true;
     }
