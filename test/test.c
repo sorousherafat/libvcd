@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
 
     vcd_t *vcd = libvcd_read_vcd_from_path(argv[1]);
     if (vcd == NULL) {
+        fprintf(stderr, "Could not read the VCD\n");
         return 1;
     }
     
