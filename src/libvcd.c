@@ -167,6 +167,10 @@ bool parse_assignment(FILE *file, vcd_t *vcd, timestamp_t timestamp) {
     if (sscanf(buffer, assignment_format_string, value, signal_id) != 2)
         return false;
 
+    /* For now, we ignore longer signal ids. */
+    if (strlen(signal_id) > 1)
+        return true;
+
     size_t index = get_signal_index(signal_id);
     if (index == -1 || index >= vcd->signals_count)
         return true;
