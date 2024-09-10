@@ -18,8 +18,8 @@ TEST_EXECUTABLE=$(BUILD_DIR)/test
 all: $(TEST_EXECUTABLE)
 
 install: $(LIB_TARGET)
-	sudo install -D -m 644 $(LIB_TARGET) $(PREFIX)/lib/
-	sudo install -D -m 644 $(HEADER) $(PREFIX)/include/
+	install -D -m 644 $(LIB_TARGET) $(PREFIX)/lib/
+	install -D -m 644 $(HEADER) $(PREFIX)/include/
 
 $(TEST_EXECUTABLE): $(LIB_TARGET) $(TEST_SOURCES) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(TEST_SOURCES) $(LIB_TARGET) -o $@ $(LDFLAGS)
@@ -37,7 +37,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 uninstall:
-	sudo rm $(PREFIX)/lib/$(notdir $(LIB_TARGET)) $(PREFIX)/include/$(notdir $(HEADER))
+	rm $(PREFIX)/lib/$(notdir $(LIB_TARGET)) $(PREFIX)/include/$(notdir $(HEADER))
 
 .PHONY: all clean
 
