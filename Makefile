@@ -8,7 +8,7 @@ SRC_DIR=src
 TEST_DIR=test
 BUILD_DIR=build
 
-HEADER=$(SRC_DIR)/libvcd.h
+HEADER=$(SRC_DIR)/vcd.h
 LIB_TARGET=$(BUILD_DIR)/libvcd.so
 LIB_SOURCES=$(wildcard $(SRC_DIR)/*.c)
 LIB_OBJECTS=$(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(LIB_SOURCES))
